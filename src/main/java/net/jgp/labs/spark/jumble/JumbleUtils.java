@@ -27,13 +27,13 @@ public abstract class JumbleUtils {
    * @param word
    * @param permutations
    */
-  private static void getPermutations(String prefix, String word, Set<String> permutations) {
+  private static void getPermutations(String prefix, String word,
+      Set<String> permutations) {
     int n = word.length();
     if (n == 0) {
       // we have a word!
       permutations.add(prefix);
-    }
-    else {
+    } else {
       for (int i = 0; i < n; i++) {
         getPermutations(
             prefix + word.charAt(i),
@@ -41,5 +41,25 @@ public abstract class JumbleUtils {
             permutations);
       }
     }
+  }
+
+  public static String getAnagramsAsString(String word) {
+    Set<String> permutations = getPermutations(word);
+    return setToPrettyString(permutations);
+  }
+
+  public static String setToPrettyString(Set<String> arg0) {
+    boolean first = true;
+    StringBuilder output = new StringBuilder();
+    for (String r : arg0) {
+      if (!first) {
+        output.append(", ");
+      }
+      output.append('"');
+      output.append(r);
+      output.append('"');
+      first = false;
+    }
+    return output.toString();
   }
 }

@@ -55,26 +55,11 @@ public class JumbleUtilsTest {
    *          Set to print.
    */
   private void debugPrettyPrint(Set<String> res) {
-    debugPrettyPrint(res.toArray());
-  }
-
-  private void debugPrettyPrint(Object[] res) {
     if (!log.isDebugEnabled()) {
       return;
     }
-    log.debug("{} elements", res.length);
-    boolean first = true;
-    StringBuilder output = new StringBuilder();
-    for (Object r : res) {
-      if (!first) {
-        output.append(", ");
-      }
-      output.append('"');
-      output.append(r);
-      output.append('"');
-      first = false;
-    }
-    log.debug("Content: {}", output.toString());
+    log.debug("{} elements", res.size());
+    log.debug("Content: {}", JumbleUtils.setToPrettyString(res));
   }
 
   /**
