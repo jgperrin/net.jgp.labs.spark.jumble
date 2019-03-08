@@ -1,0 +1,12 @@
+title: "Puzzle 6"
+date: 2019-03-07
+words:
+ - word: NEEUV
+   charToReport: [ 1, 2, 5 ]
+ - word: PEDIT
+   charToReport: [ 1, 3, 5 ]
+ - word: WAYLEK
+   charToReport: [ 1, 6 ]
+ - word: NAHRGA
+   charToReport: [ 1, 2, 5 ]
+finalClue: [5, 3, 3]
