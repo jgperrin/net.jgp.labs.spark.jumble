@@ -1,17 +1,12 @@
-puzzle:
+title: "Puzzle 1"
+date: 2008
+words:
  - word: NAGLD
-   sequence: 1
    charToReport: [ 2, 4, 5 ]
  - word: RAMOJ
-   sequence: 2
    charToReport: [ 3, 4 ]
  - word: CAMBLE
-   sequence: 3
    charToReport: [ 1, 2, 4 ]
  - word: WRALEY
-   sequence: 4
    charToReport: [ 1, 3, 5 ]
- - clue:
-   - word: 3
-   - word: 4
-   - word: 4
+finalClue: [3, 4, 4]
