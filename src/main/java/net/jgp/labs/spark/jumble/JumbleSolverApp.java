@@ -14,6 +14,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.spark.sql.Column;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
@@ -32,9 +33,11 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import net.jgp.labs.spark.jumble.models.Puzzle;
 import net.jgp.labs.spark.jumble.models.Word;
 import net.jgp.labs.spark.jumble.udf.CharacterExtractorUdf;
+import net.jgp.labs.spark.jumble.udf.SortStringUdf;
 import net.jgp.labs.spark.jumble.udf.SubtractStringUdf;
 import net.jgp.labs.spark.jumble.utils.JumbleUtils;
 import net.jgp.labs.spark.jumble.utils.K;
+import net.jgp.labs.spark.jumble.utils.SparkUtils;
 
 /**
  * What does it do?
@@ -53,23 +56,25 @@ public class JumbleSolverApp {
    * main() is your entry point to the application.
    * 
    * @param args
+   *          not used
    */
   public static void main(String[] args) {
     JumbleSolverApp app = new JumbleSolverApp();
+    String game = "puzzle6";
     try {
-      app.play("puzzle6");
-    } catch (JsonParseException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    } catch (JsonMappingException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
+      app.play(game);
     } catch (IOException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
+      log.error(
+          "An IO error happened while trying to load game {}: {}",
+          game, e.getMessage(), e);
+      ;
     }
   }
 
+  /**
+   * Initializes the system, creates a session, loads the dictionary.
+   * Initialization can be reused for different game.
+   */
   public JumbleSolverApp() {
     // Local initialization
     this.cwd = System.getProperty("user.dir");
@@ -77,7 +82,7 @@ public class JumbleSolverApp {
     // Creates a session on a local master
     spark = SparkSession.builder()
         .appName("Jumble solver")
-        .master("local[*]")
+        .master("local")
         .getOrCreate();
 
     spark.udf().register(
@@ -87,6 +92,10 @@ public class JumbleSolverApp {
     spark.udf().register(
         "subtractString",
         new SubtractStringUdf(),
+        DataTypes.StringType);
+    spark.udf().register(
+        "sortString",
+        new SortStringUdf(),
         DataTypes.StringType);
 
     StructType schema = DataTypes.createStructType(new StructField[] {
@@ -126,7 +135,7 @@ public class JumbleSolverApp {
             when(col("raw_freq").equalTo(0), 10000)
                 .otherwise(col("raw_freq")))
         .drop("raw_freq");
-    dictionaryDf.cache();
+    dictionaryDf = dictionaryDf.cache();
     dictionaryDf.createOrReplaceTempView(K.ALL_WORDS);
   }
 
@@ -145,7 +154,8 @@ public class JumbleSolverApp {
     log.info("Now playing: {}", puzzle.getTitle());
     long t0 = System.currentTimeMillis();
 
-    // Pre-solving 1st part of the brain teaser
+    // Phase 1: Pre-solving 1st part of the brain teaser
+    // ----
     Dataset<Row> puzzleResultDf = null;
     int wordCount = 0;
     for (Word w : puzzle.getWords()) {
@@ -171,28 +181,37 @@ public class JumbleSolverApp {
                     col(K.CHARS + "_" + wordCount)));
       }
     }
-    puzzleResultDf.show();
+    puzzleResultDf = puzzleResultDf.withColumn(K.FINAL_CLUE,
+        callUDF("sortString", col(K.FINAL_CLUE)));
+    puzzleResultDf = puzzleResultDf.cache();
+    if (log.isTraceEnabled()) {
+      puzzleResultDf.show();
+    }
+    prettyPrint(puzzleResultDf, wordCount);
+
     long t1 = System.currentTimeMillis();
     log.debug("Phase 1: took {} ms.", (t1 - t0));
 
-    // Solving second part of the teaser
+    // Phase 2: Solving second part of the teaser
+    // ----
     List<Row> rootsTmp = puzzleResultDf
         .select(K.FINAL_CLUE)
         .as(K.DIFF)
         .distinct()
         .collectAsList();
-    Set<String> roots = getSortedStringSetFromRows(rootsTmp);
+    Set<String> roots = SparkUtils.getStringSetFromRows(rootsTmp);
     Dataset<Row> lastClueDf = null;
     int wordIndex = 0;
     for (int charInWord : puzzle.getFinalClue()) {
       wordIndex++;
-      log.info("Final clue: word #{}/{}.", wordIndex,
+      log.debug(
+          "Final clue: word #{}/{}.", wordIndex,
           puzzle.getFinalClue().size());
       Dataset<Row> df = null;
       int rootIndex = 0;
       for (String root : roots) {
         String rootStr = root;
-        log.info(
+        log.debug(
             "Looking for all permutations of: {} #{}/{}.",
             rootStr, ++rootIndex, roots.size());
         String sql =
@@ -221,7 +240,7 @@ public class JumbleSolverApp {
       Dataset<Row> tmpDf = df
           .select(K.DIFF + "_" + wordIndex)
           .distinct();
-      roots = getSortedStringSetFromRows(tmpDf.collectAsList());
+      roots = SparkUtils.getSortedStringSetFromRows(tmpDf.collectAsList());
 
       if (lastClueDf == null) {
         lastClueDf = df.withColumn(
@@ -237,31 +256,85 @@ public class JumbleSolverApp {
             .withColumn(
                 K.REV_SCORE,
                 expr(K.REV_SCORE + "*" + K.FREQ + "_" + wordIndex));
-        // .drop(K.DIFF + "_" + (wordIndex - 1));
       }
       if (log.isTraceEnabled()) {
         lastClueDf.show();
       }
     }
-    lastClueDf =
-        lastClueDf.filter(col(K.DIFF + "_" + wordIndex).isNotNull());
-    lastClueDf.show();
+    lastClueDf = lastClueDf
+        .filter(col(K.DIFF + "_" + wordIndex).isNotNull())
+        .orderBy(K.REV_SCORE);
+    if (log.isTraceEnabled()) {
+      lastClueDf.show();
+    }
+    prettyPrintFinal(lastClueDf, wordIndex);
+
     long t2 = System.currentTimeMillis();
     log.debug("Phase 2: took {} ms.", (t2 - t1));
 
-    // Validating first part of brain teaser against final clue
+    // Phase 3: Validating first part of brain teaser against final clue
+    // ----
+    puzzleResultDf = puzzleResultDf.join(
+        lastClueDf,
+        puzzleResultDf.col(K.FINAL_CLUE)
+            .equalTo(lastClueDf.col(K.ROOT + "_1")),
+        "leftsemi");
+    if (log.isTraceEnabled()) {
+      puzzleResultDf.show();
+    }
+    log.info("Final possible words for phase 1");
+    prettyPrint(puzzleResultDf, wordCount);
     long t3 = System.currentTimeMillis();
     log.debug("Phase 3: took {} ms.", (t3 - t2));
 
     log.debug("Game played in {} ms.", (t3 - t0));
   }
 
-  private Set<String> getSortedStringSetFromRows(List<Row> rows) {
-    Set<String> words = new HashSet<String>();
-    for (Row row : rows) {
-      words.add(JumbleUtils.sortString(row.getString(0)));
+  /**
+   * Pretty print the output of the final clue result.
+   * 
+   * @param df
+   * @param finalClueWordCount
+   */
+  private void prettyPrintFinal(Dataset<Row> df, int finalClueWordCount) {
+    Column[] columns = new Column[finalClueWordCount];
+    for (int i = 1; i <= finalClueWordCount; i++) {
+      columns[i - 1] = col(K.WORD + "_" + i);
     }
-    return words;
+    Dataset<Row> prettyPrinterDf = df
+        .withColumn(K.FINAL_CLUE, concat_ws(" ", columns))
+        .drop(df.columns());
+    if (log.isTraceEnabled()) {
+      prettyPrinterDf.show();
+    }
+    List<Row> rows = prettyPrinterDf.collectAsList();
+    int count = 0;
+    for (Row r : rows) {
+      log.info("Solution #{}/{}: {}", ++count, rows.size(), r.getString(0));
+    }
+  }
+
+  /**
+   * Pretty print the result of phase 1 and phase 3: takes a dataframe and
+   * displays all columns that matters in the order of priority.
+   * 
+   * @param df
+   * @param wordCount
+   */
+  private void prettyPrint(Dataset<Row> df, int wordCount) {
+    df = df.cache();
+    log.trace("df contains {} rows", df.count());
+    for (int i = 1; i <= wordCount; i++) {
+      long t0 = System.currentTimeMillis();
+      List<Row> rows = df
+          .select(K.WORD + "_" + i, K.FREQ + "_" + i)
+          .distinct()
+          .orderBy(col(K.FREQ + "_" + i).asc()).collectAsList();
+      long t1 = System.currentTimeMillis();
+      log.info("Word #{}: {}", i, SparkUtils.prettyPrintListRows(rows));
+      log.trace("Extraction took {} ms", (t1 - t0));
+    }
+
   }
 
   private Dataset<Row> buildAnagrams(

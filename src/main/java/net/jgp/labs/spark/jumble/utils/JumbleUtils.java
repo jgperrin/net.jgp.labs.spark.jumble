@@ -9,6 +9,12 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Bunch of utilities to help manipulate strings for the Jumble game. No
+ * dependency on Spark.
+ * 
+ * @author jgp
+ */
 public abstract class JumbleUtils {
   private static Logger log = LoggerFactory.getLogger(JumbleUtils.class);
 
@@ -52,11 +58,24 @@ public abstract class JumbleUtils {
     }
   }
 
+  /**
+   * Builds a comma separated list of all the permutations of a word.
+   * 
+   * @param word
+   * @return
+   */
   public static String getPermutationsAsCommaSeparatedList(String word) {
     Set<String> permutations = getPermutations(word);
     return setToPrettyString(permutations);
   }
 
+  /**
+   * Builds all sub permutations.
+   * 
+   * @param word
+   * @param length
+   * @return
+   */
   public static String getSubPermutationsAsCommaSeparatedList(
       String word,
       int length) {
@@ -64,6 +83,12 @@ public abstract class JumbleUtils {
     return setToPrettyString(permutations);
   }
 
+  /**
+   * Builds a pretty string from a set.
+   * 
+   * @param arg0
+   * @return
+   */
   public static String setToPrettyString(Set<String> arg0) {
     boolean first = true;
     StringBuilder output = new StringBuilder();
@@ -91,7 +116,6 @@ public abstract class JumbleUtils {
    * @return
    */
   public static Set<String> getSubPermutations(String word, int length) {
-    Set<String> subPermutations = new HashSet<>();
     List<boolean[]> masks = new ArrayList<>();
 
     int l = word.length();
@@ -114,12 +138,15 @@ public abstract class JumbleUtils {
           }
         }
       }
+      // Keep only the masks we want
       if (valid && count == length) {
         log.trace("{} = {}", i, Arrays.toString(bits));
         addCopyOfMaskToList(masks, bits);
       }
     }
 
+    // Build the first level of permutations based on the mask
+    Set<String> rootPermutations = new HashSet<>();
     for (boolean[] m : masks) {
       String res = "";
       for (int i = 0; i < m.length; i++) {
@@ -127,20 +154,39 @@ public abstract class JumbleUtils {
           res += word.charAt(i);
         }
       }
-      log.trace("Root: {}", res);
+      log.trace("Root (might not be unique, will be filtered): {}", res);
 
-      subPermutations.addAll(getPermutations(res));
+      // Get all the permutations
+      rootPermutations.add(res);
     }
-
+    Set<String> subPermutations = new HashSet<>();
+    for (String w : rootPermutations) {
+      subPermutations.addAll(getPermutations(w));
+    }
     return subPermutations;
   }
 
+  /**
+   * Private method to secure (copy) a mask in the array containing all
+   * masks.
+   * 
+   * @param masks
+   * @param mask
+   */
   private static void addCopyOfMaskToList(
       List<boolean[]> masks,
       boolean[] mask) {
     masks.add(Arrays.copyOf(mask, mask.length));
   }
 
+  /**
+   * Subtract a string from another string at the character level, e.g.
+   * "abcdef" - "abc" = "def".
+   * 
+   * @param minuend
+   * @param subtrahend
+   * @return
+   */
   public static String subtract(String minuend, String subtrahend) {
     int subtrahendLength = subtrahend.length();
     char[] minuendCharacterArray = minuend.toCharArray();
@@ -168,9 +214,9 @@ public abstract class JumbleUtils {
    * @return
    */
   public static String sortString(String arg0) {
-    char tempArray[] = arg0.toCharArray(); 
-    Arrays.sort(tempArray); 
-    return new String(tempArray); 
+    char tempArray[] = arg0.toCharArray();
+    Arrays.sort(tempArray);
+    return new String(tempArray);
   }
 
 }
