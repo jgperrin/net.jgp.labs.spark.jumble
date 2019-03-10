@@ -9,6 +9,7 @@ import static org.apache.spark.sql.functions.when;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -40,7 +41,7 @@ public class JumbleSolverApp {
       LoggerFactory.getLogger(JumbleSolverApp.class);
 
   private SparkSession spark = null;
-  private Dataset<Row> df = null;
+  private Dataset<Row> dictionaryDf = null;
   private String cwd = null;
 
   /**
@@ -78,6 +79,10 @@ public class JumbleSolverApp {
         "extractChars",
         new CharacterExtractorUdf(),
         DataTypes.StringType);
+    spark.udf().register(
+        "subtractString",
+        new SubtractStringUdf(),
+        DataTypes.StringType);
 
     StructType schema = DataTypes.createStructType(new StructField[] {
         DataTypes.createStructField(
@@ -89,15 +94,17 @@ public class JumbleSolverApp {
             DataTypes.StringType,
             false) });
 
-    df = spark.read().format("csv")
+    dictionaryDf = spark.read().format("csv")
         .option("sep", ":")
         .option("ignoreLeadingWhiteSpace", true)
         .schema(schema)
-        .load("data/freq_dict.json");// _puzzle6.json");
+        // .load("data/freq_dict.json");
+        .load("data/freq_dict_puzzle6.json");
 
-    df = df.filter(col("frequency").isNotNull());
-    df = df.withColumn("freq_trim", trim(col("frequency")));
-    df = df
+    dictionaryDf = dictionaryDf.filter(col("frequency").isNotNull());
+    dictionaryDf =
+        dictionaryDf.withColumn("freq_trim", trim(col("frequency")));
+    dictionaryDf = dictionaryDf
         .withColumn(
             "raw_freq",
             split(col("freq_trim"), ",")
@@ -108,16 +115,14 @@ public class JumbleSolverApp {
 
     // If frequency is 0, it is actually very rare, so to ease sorting,
     // let's assume it's more than the max, set to 9887.
-    df = df
+    dictionaryDf = dictionaryDf
         .withColumn(
             "freq",
             when(col("raw_freq").equalTo(0), 10000)
                 .otherwise(col("raw_freq")))
         .drop("raw_freq");
-    df.createOrReplaceTempView("all_words");
-
-    // Shows at most 20 rows from the dataframe
-    df.show(20);
+    dictionaryDf.cache();
+    dictionaryDf.createOrReplaceTempView(K.ALL_WORDS);
   }
 
   /**
@@ -131,7 +136,11 @@ public class JumbleSolverApp {
     Puzzle puzzle = mapper.readValue(
         new File(cwd + "/data/" + title + ".yaml"),
         Puzzle.class);
+
     log.info("Now playing: {}", puzzle.getTitle());
+    long t0 = System.currentTimeMillis();
+
+    // Pre-solving 1st part of the brain teaser
     Dataset<Row> puzzleResultDf = null;
     int wordCount = 0;
     for (Word w : puzzle.getWords()) {
@@ -158,67 +167,84 @@ public class JumbleSolverApp {
       }
     }
     puzzleResultDf.show();
+    long t1 = System.currentTimeMillis();
+    log.debug("Phase 1: took {} ms.", (t1 - t0));
 
-    Dataset<Row> r=null;
-    String w0 = "veetpdwyhaa";
-    for (Integer charInWord : puzzle.getFinalClue()) {
-      // Set<String> s = JumbleUtils.getSubPermutations("veetpdwyhaa",
-      // charInWord);
-      // log.debug(JumbleUtils.setToPrettyString(s));
+    // Solving second part of the teaser
+    List<Row> roots = puzzleResultDf
+        .select(K.FINAL_CLUE)
+        .as(K.DIFF)
+        .distinct()
+        .collectAsList();
+    Dataset<Row> lastClueDf = null;
+    int wordIndex = 0;
+    for (int charInWord : puzzle.getFinalClue()) {
+      wordIndex++;
+      log.info("Final clue: word #{}/{}.", wordIndex,
+          puzzle.getFinalClue().size());
+      Dataset<Row> df = null;
+      int rootIndex = 0;
+      for (Row root : roots) {
+        String rootStr = root.getString(0);
+        log.info(
+            "Looking for all permutations of: {} #{}/{}.",
+            rootStr, ++rootIndex, roots.size());
+        String sql =
+            "SELECT * FROM "
+                + K.ALL_WORDS + " WHERE "
+                + K.WORD + " IN ("
+                + JumbleUtils.getSubPermutationsAsCommaSeparatedList(
+                    rootStr, charInWord)
+                + ") ORDER BY freq ASC";
+        Dataset<Row> df0 = spark
+            .sql(sql)
+            .withColumn(K.ROOT + "_" + wordIndex, lit(rootStr))
+            .withColumnRenamed(K.WORD, K.WORD + "_" + wordIndex)
+            .withColumnRenamed(K.FREQ, K.FREQ + "_" + wordIndex)
+            .withColumn(K.DIFF + "_" + wordIndex,
+                callUDF(
+                    "subtractString",
+                    col(K.ROOT + "_" + wordIndex),
+                    col(K.WORD + "_" + wordIndex)));
+        if (df == null) {
+          df = df0;
+        } else {
+          df = df.unionByName(df0);
+        }
+      }
+      Dataset<Row> tmpDf = df
+          .select(K.DIFF + "_" + wordIndex)
+          .distinct();
+      roots = tmpDf.collectAsList();
 
-//      String sql =
-//          "SELECT * FROM all_words WHERE "
-//              + K.WORD + " IN ("
-//              + JumbleUtils.getSubPermutationsAsCommaSeparatedList(
-//                  w0, 5)
-//              + ") ORDER BY freq ASC";
-//      Dataset<Row> r1 = spark.sql(sql);
-//      r1.show();
-//      List<Row> list = r1.collectAsList();
-//      String w1 = list.get(0).getString(0);
-//      String w2 = JumbleUtils.subtract(w0, w1);
-//      log.debug("{} - {} = {}", w0, w1, w2);
-//
-//      sql =
-//          "SELECT * FROM all_words WHERE "
-//              + K.WORD + " IN ("
-//              + JumbleUtils.getSubPermutationsAsCommaSeparatedList(
-//                  w2, 3)
-//              + ") ORDER BY freq ASC";
-//      Dataset<Row> r2 = spark.sql(sql);
-//      r2.show();
-//      
-//       list = r2.collectAsList();
-//      String w3 = list.get(0).getString(0);
-//      String w4 = JumbleUtils.subtract(w2, w3);
-//      log.debug("{} - {} = {}", w2, w3, w4);
-//
-//      sql =
-//          "SELECT * FROM all_words WHERE "
-//              + K.WORD + " IN ("
-//              + JumbleUtils.getSubPermutationsAsCommaSeparatedList(
-//                  w4, 3)
-//              + ") ORDER BY freq ASC";
-//      Dataset<Row> r3 = spark.sql(sql);
-//      r3.show();
-//      
-//      Dataset<Row> r = r1.crossJoin(r2).crossJoin(r3);
-//      r.show();
-      String sql =
-        "SELECT * FROM all_words WHERE "
-            + K.WORD + " IN ("
-            + JumbleUtils.getSubPermutationsAsCommaSeparatedList(
-                w0, 5)
-            + ") ORDER BY freq ASC";
-      Dataset<Row> r1 = spark.sql(sql);
-      if (r==null) {
-        r=r1;
-      }else
-      {
-        r = r.crossJoin(r1);
+      if (lastClueDf == null) {
+        lastClueDf = df.withColumn(
+            K.REV_SCORE,
+            col(K.FREQ + "_1").cast(DataTypes.LongType));
+      } else {
+        lastClueDf = lastClueDf
+            .join(
+                df,
+                lastClueDf.col(K.DIFF + "_" + (wordIndex - 1))
+                    .equalTo(df.col(K.ROOT + "_" + wordIndex)),
+                "left")
+            .withColumn(
+                K.REV_SCORE,
+                expr(K.REV_SCORE + "*" + K.FREQ + "_" + wordIndex))
+            .drop(K.DIFF + "_" + (wordIndex - 1));
       }
     }
-    r.show();
+    lastClueDf =
+        lastClueDf.filter(col(K.DIFF + "_" + wordIndex).isNotNull());
+    lastClueDf.show();
+    long t2 = System.currentTimeMillis();
+    log.debug("Phase 2: took {} ms.", (t2 - t1));
+
+    // Validating first part of brain teaser against final clue
+    long t3 = System.currentTimeMillis();
+    log.debug("Phase 3: took {} ms.", (t3 - t2));
+
+    log.debug("Game played in {} ms.", (t3 - t0));
   }
 
   private Dataset<Row> buildAnagrams(
@@ -226,20 +252,19 @@ public class JumbleSolverApp {
       List<Integer> list,
       int wordIndex) {
     String sql =
-        "SELECT * FROM all_words WHERE " + K.WORD + " IN ("
+        "SELECT * FROM "
+            + K.ALL_WORDS + " WHERE " + K.WORD + " IN ("
             + JumbleUtils.getPermutationsAsCommaSeparatedList(word)
             + ") ORDER BY freq ASC";
-    Dataset<Row> r = spark
+    return spark
         .sql(sql)
-        .withColumn("charsToExtract", lit(list.toArray(new Integer[0])))
+        .withColumn(K.CHARS_TO_EXTRACT, lit(list.toArray(new Integer[0])))
         .withColumn(
             K.CHARS,
-            callUDF("extractChars", col(K.WORD), col("charsToExtract")))
-        .drop("charsToExtract")
+            callUDF("extractChars", col(K.WORD), col(K.CHARS_TO_EXTRACT)))
+        .drop(K.CHARS_TO_EXTRACT)
         .withColumnRenamed(K.WORD, K.WORD + "_" + wordIndex)
         .withColumnRenamed(K.FREQ, K.FREQ + "_" + wordIndex)
         .withColumnRenamed(K.CHARS, K.CHARS + "_" + wordIndex);
-    r.show();
-    return r;
   }
 }

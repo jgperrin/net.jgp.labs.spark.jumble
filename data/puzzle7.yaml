@@ -1,0 +1,12 @@
+title: "Puzzle 7"
+date: 2019-03-10
+words:
+ - word: URPPE
+   charToReport: [ 4, 5 ]
+ - word: SUPIO
+   charToReport: [ 2, 3 ]
+ - word: FLUNGE
+   charToReport: [ 1, 3, 5 ]
+ - word: COATEL
+   charToReport: [ 1, 3, 5 ]
+finalClue: [7, 3]
