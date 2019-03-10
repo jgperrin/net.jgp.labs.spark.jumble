@@ -112,8 +112,8 @@ public class JumbleSolverApp {
         .option("sep", ":")
         .option("ignoreLeadingWhiteSpace", true)
         .schema(schema)
-        // .load("data/freq_dict.json");
-        .load("data/freq_dict_puzzle6.json");
+         .load("data/freq_dict.json");
+        //.load("data/freq_dict_puzzle6.json");
 
     dictionaryDf = dictionaryDf.filter(col("frequency").isNotNull());
     dictionaryDf =
@@ -287,7 +287,7 @@ public class JumbleSolverApp {
     long t3 = System.currentTimeMillis();
     log.debug("Phase 3: took {} ms.", (t3 - t2));
 
-    log.debug("Game played in {} ms.", (t3 - t0));
+    log.info("Game played in {} ms.", (t3 - t0));
   }
 
   /**

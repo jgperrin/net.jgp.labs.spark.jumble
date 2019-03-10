@@ -1,0 +1,12 @@
+title: "Puzzle 2"
+date: 2014-11-28
+words:
+ - word: BNEDL
+   charToReport: [ 1, 5 ]
+ - word: IDOVA
+   charToReport: [ 1, 4, 5 ]
+ - word: SEHEYC
+   charToReport: [ 2, 6 ]
+ - word: ARACEM
+   charToReport: [ 1, 5, 6 ]
+finalClue: [ 3, 4, 3 ]
