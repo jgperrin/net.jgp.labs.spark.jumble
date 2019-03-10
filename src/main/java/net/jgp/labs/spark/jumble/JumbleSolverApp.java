@@ -10,6 +10,7 @@ import static org.apache.spark.sql.functions.when;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -30,6 +31,10 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
 import net.jgp.labs.spark.jumble.models.Puzzle;
 import net.jgp.labs.spark.jumble.models.Word;
+import net.jgp.labs.spark.jumble.udf.CharacterExtractorUdf;
+import net.jgp.labs.spark.jumble.udf.SubtractStringUdf;
+import net.jgp.labs.spark.jumble.utils.JumbleUtils;
+import net.jgp.labs.spark.jumble.utils.K;
 
 /**
  * What does it do?
@@ -171,11 +176,12 @@ public class JumbleSolverApp {
     log.debug("Phase 1: took {} ms.", (t1 - t0));
 
     // Solving second part of the teaser
-    List<Row> roots = puzzleResultDf
+    List<Row> rootsTmp = puzzleResultDf
         .select(K.FINAL_CLUE)
         .as(K.DIFF)
         .distinct()
         .collectAsList();
+    Set<String> roots = getSortedStringSetFromRows(rootsTmp);
     Dataset<Row> lastClueDf = null;
     int wordIndex = 0;
     for (int charInWord : puzzle.getFinalClue()) {
@@ -184,8 +190,8 @@ public class JumbleSolverApp {
           puzzle.getFinalClue().size());
       Dataset<Row> df = null;
       int rootIndex = 0;
-      for (Row root : roots) {
-        String rootStr = root.getString(0);
+      for (String root : roots) {
+        String rootStr = root;
         log.info(
             "Looking for all permutations of: {} #{}/{}.",
             rootStr, ++rootIndex, roots.size());
@@ -215,7 +221,7 @@ public class JumbleSolverApp {
       Dataset<Row> tmpDf = df
           .select(K.DIFF + "_" + wordIndex)
           .distinct();
-      roots = tmpDf.collectAsList();
+      roots = getSortedStringSetFromRows(tmpDf.collectAsList());
 
       if (lastClueDf == null) {
         lastClueDf = df.withColumn(
@@ -227,11 +233,14 @@ public class JumbleSolverApp {
                 df,
                 lastClueDf.col(K.DIFF + "_" + (wordIndex - 1))
                     .equalTo(df.col(K.ROOT + "_" + wordIndex)),
-                "left")
+                "inner")
             .withColumn(
                 K.REV_SCORE,
-                expr(K.REV_SCORE + "*" + K.FREQ + "_" + wordIndex))
-            .drop(K.DIFF + "_" + (wordIndex - 1));
+                expr(K.REV_SCORE + "*" + K.FREQ + "_" + wordIndex));
+        // .drop(K.DIFF + "_" + (wordIndex - 1));
+      }
+      if (log.isTraceEnabled()) {
+        lastClueDf.show();
       }
     }
     lastClueDf =
@@ -245,6 +254,14 @@ public class JumbleSolverApp {
     log.debug("Phase 3: took {} ms.", (t3 - t2));
 
     log.debug("Game played in {} ms.", (t3 - t0));
+  }
+
+  private Set<String> getSortedStringSetFromRows(List<Row> rows) {
+    Set<String> words = new HashSet<String>();
+    for (Row row : rows) {
+      words.add(JumbleUtils.sortString(row.getString(0)));
+    }
+    return words;
   }
 
   private Dataset<Row> buildAnagrams(

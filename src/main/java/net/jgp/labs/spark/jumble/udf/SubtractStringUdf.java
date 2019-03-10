@@ -1,6 +1,8 @@
-package net.jgp.labs.spark.jumble;
+package net.jgp.labs.spark.jumble.udf;
 
 import org.apache.spark.sql.api.java.UDF2;
+
+import net.jgp.labs.spark.jumble.utils.JumbleUtils;
 
 /**
  * 

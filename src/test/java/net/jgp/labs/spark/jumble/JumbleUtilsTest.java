@@ -11,6 +11,8 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import net.jgp.labs.spark.jumble.utils.JumbleUtils;
+
 public class JumbleUtilsTest {
   private static Logger log =
       LoggerFactory.getLogger(JumbleUtilsTest.class);

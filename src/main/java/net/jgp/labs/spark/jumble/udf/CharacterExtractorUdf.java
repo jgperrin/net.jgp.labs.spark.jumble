@@ -1,4 +1,4 @@
-package net.jgp.labs.spark.jumble;
+package net.jgp.labs.spark.jumble.udf;
 
 import java.util.Collection;
 

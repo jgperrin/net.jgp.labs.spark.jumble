@@ -1,4 +1,4 @@
-package net.jgp.labs.spark.jumble;
+package net.jgp.labs.spark.jumble.utils;
 
 /**
  * (K)onstants - K is used to identify constants, and is voluntarily

@@ -1,4 +1,4 @@
-package net.jgp.labs.spark.jumble;
+package net.jgp.labs.spark.jumble.utils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -159,6 +159,18 @@ public abstract class JumbleUtils {
       }
     }
     return output.toString();
+  }
+
+  /**
+   * Sorts the characters in a string.
+   * 
+   * @param arg0
+   * @return
+   */
+  public static String sortString(String arg0) {
+    char tempArray[] = arg0.toCharArray(); 
+    Arrays.sort(tempArray); 
+    return new String(tempArray); 
   }
 
 }
