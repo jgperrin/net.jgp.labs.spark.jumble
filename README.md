@@ -4,6 +4,8 @@ The Jumble puzzle is a common newspaper puzzle, it contains a series of anagrams
 
 You can play the game [online](https://www.jumble.com/playjumble).
 
+## Challenge
+
 Your challenge is to solve the five Jumble puzzles using Spark with Scala or Python, where it makes sense to do so. If the final puzzle has multiple possible answers, you are to include an algorithm to determine the most likely one. We have provided a dictionary where the "most common" English words are scored (1=most frequent, 9887=least frequent, 0=not scored due to infrequency of use). For each puzzle, produce the "most likely" (as you determine it) final anagram produced from solving all the other anagrams.
 
 **Important Notes**: Part of your task is to have this be as production ready as possible - while there are only five puzzles now, assume that there could be many more, so use Spark in the most useful way, however you don't need to spend a lot of time on tweaking the parallelization parameters. The code should be deployable and maintainable as well. Don't spend more than 24 hours to complete as much of the assignment as you can.
@@ -15,3 +17,8 @@ Also included:
 Please include the following in your repository:
 * Your initial data (from the jumble pictures given)
 * Output from your code
+
+## Results
+
+### Puzzle 1
+
