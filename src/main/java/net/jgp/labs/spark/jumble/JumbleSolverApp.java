@@ -91,6 +91,7 @@ public class JumbleSolverApp {
     // Creates a session on a local master
     spark = SparkSession.builder()
         .appName("Jumble solver")
+        .config("spark.driver.maxResultSize", "3g")
         .master("local[*]")
         .getOrCreate();
 
