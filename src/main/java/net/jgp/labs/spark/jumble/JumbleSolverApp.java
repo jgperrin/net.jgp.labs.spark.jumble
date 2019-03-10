@@ -10,10 +10,12 @@ import static org.apache.spark.sql.functions.when;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
@@ -49,7 +51,7 @@ public class JumbleSolverApp {
   public static void main(String[] args) {
     JumbleSolverApp app = new JumbleSolverApp();
     try {
-      app.play("puzzle1");
+      app.play("puzzle6");
     } catch (JsonParseException e) {
       // TODO Auto-generated catch block
       e.printStackTrace();
@@ -104,7 +106,7 @@ public class JumbleSolverApp {
         .drop("frequency")
         .drop("freq_trim");
 
-    // If frequency is one, it is actually very rare, so to ease sorting,
+    // If frequency is 0, it is actually very rare, so to ease sorting,
     // let's assume it's more than the max, set to 9887.
     df = df
         .withColumn(
@@ -123,11 +125,8 @@ public class JumbleSolverApp {
    * 
    * @param title
    * @throws IOException
-   * @throws JsonMappingException
-   * @throws JsonParseException
    */
-  private void play(String title)
-      throws JsonParseException, JsonMappingException, IOException {
+  private void play(String title) throws IOException {
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
     Puzzle puzzle = mapper.readValue(
         new File(cwd + "/data/" + title + ".yaml"),
@@ -141,26 +140,94 @@ public class JumbleSolverApp {
           buildAnagrams(w.getWord(), w.getCharToReport(), wordCount);
       if (puzzleResultDf == null) {
         puzzleResultDf = anagramsDf
-            .withColumn(K.REV_SCORE, col(K.FREQ + "_1"));
+            .withColumn(
+                K.REV_SCORE,
+                col(K.FREQ + "_1").cast(DataTypes.LongType))
+            .withColumn(K.FINAL_CLUE, col(K.CHARS + "_1"));
       } else {
         puzzleResultDf = puzzleResultDf
             .crossJoin(anagramsDf)
             .withColumn(
                 K.REV_SCORE,
-                expr(K.REV_SCORE + "*" + K.FREQ + "_" + (wordCount - 1)))
+                expr(K.REV_SCORE + "*" + K.FREQ + "_" + wordCount))
             .withColumn(
                 K.FINAL_CLUE,
-                concat(col(K.CHARS)));
+                concat(
+                    col(K.FINAL_CLUE),
+                    col(K.CHARS + "_" + wordCount)));
       }
     }
     puzzleResultDf.show();
+
+    Dataset<Row> r=null;
+    String w0 = "veetpdwyhaa";
+    for (Integer charInWord : puzzle.getFinalClue()) {
+      // Set<String> s = JumbleUtils.getSubPermutations("veetpdwyhaa",
+      // charInWord);
+      // log.debug(JumbleUtils.setToPrettyString(s));
+
+//      String sql =
+//          "SELECT * FROM all_words WHERE "
+//              + K.WORD + " IN ("
+//              + JumbleUtils.getSubPermutationsAsCommaSeparatedList(
+//                  w0, 5)
+//              + ") ORDER BY freq ASC";
+//      Dataset<Row> r1 = spark.sql(sql);
+//      r1.show();
+//      List<Row> list = r1.collectAsList();
+//      String w1 = list.get(0).getString(0);
+//      String w2 = JumbleUtils.subtract(w0, w1);
+//      log.debug("{} - {} = {}", w0, w1, w2);
+//
+//      sql =
+//          "SELECT * FROM all_words WHERE "
+//              + K.WORD + " IN ("
+//              + JumbleUtils.getSubPermutationsAsCommaSeparatedList(
+//                  w2, 3)
+//              + ") ORDER BY freq ASC";
+//      Dataset<Row> r2 = spark.sql(sql);
+//      r2.show();
+//      
+//       list = r2.collectAsList();
+//      String w3 = list.get(0).getString(0);
+//      String w4 = JumbleUtils.subtract(w2, w3);
+//      log.debug("{} - {} = {}", w2, w3, w4);
+//
+//      sql =
+//          "SELECT * FROM all_words WHERE "
+//              + K.WORD + " IN ("
+//              + JumbleUtils.getSubPermutationsAsCommaSeparatedList(
+//                  w4, 3)
+//              + ") ORDER BY freq ASC";
+//      Dataset<Row> r3 = spark.sql(sql);
+//      r3.show();
+//      
+//      Dataset<Row> r = r1.crossJoin(r2).crossJoin(r3);
+//      r.show();
+      String sql =
+        "SELECT * FROM all_words WHERE "
+            + K.WORD + " IN ("
+            + JumbleUtils.getSubPermutationsAsCommaSeparatedList(
+                w0, 5)
+            + ") ORDER BY freq ASC";
+      Dataset<Row> r1 = spark.sql(sql);
+      if (r==null) {
+        r=r1;
+      }else
+      {
+        r = r.crossJoin(r1);
+      }
+    }
+    r.show();
   }
 
-  private Dataset<Row> buildAnagrams(String word, List<Integer> list,
+  private Dataset<Row> buildAnagrams(
+      String word,
+      List<Integer> list,
       int wordIndex) {
     String sql =
-        "SELECT * FROM all_words WHERE word IN ("
-            + JumbleUtils.getAnagramsAsString(word)
+        "SELECT * FROM all_words WHERE " + K.WORD + " IN ("
+            + JumbleUtils.getPermutationsAsCommaSeparatedList(word)
             + ") ORDER BY freq ASC";
     Dataset<Row> r = spark
         .sql(sql)

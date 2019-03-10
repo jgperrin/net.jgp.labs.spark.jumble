@@ -47,6 +47,34 @@ public class JumbleUtilsTest {
     assertUnsortedArrayEquals("!ok", expected.toArray(), res.toArray());
   }
 
+  @Test
+  public void testAllSubWords1() {
+    Set<String> res = JumbleUtils.getSubPermutations("abcdefg", 3);
+    debugPrettyPrint(res);
+  }
+
+  @Test
+  public void testAllSubWords2() {
+    Set<String> res = JumbleUtils.getSubPermutations("abc", 2);
+    debugPrettyPrint(res);
+  }
+
+  @Test
+  public void testSubtract1() {
+    String minuend = "abcdef";
+    String subtrahend = "abc";
+    String difference = JumbleUtils.subtract(minuend, subtrahend)  ;
+    assertTrue("ok", difference.compareTo("def") == 0);
+  }
+
+  @Test
+  public void testSubtract2() {
+    String minuend = "veetpdwyhaa";
+    String subtrahend = "death";
+    String difference = JumbleUtils.subtract(minuend, subtrahend)  ;
+    assertTrue("ok", difference.compareTo("vepwya") == 0);
+  }
+
   /**
    * Quick pretty printer to display a Set<String> nicely. Only works when
    * debug is on.
