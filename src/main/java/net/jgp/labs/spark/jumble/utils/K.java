@@ -14,11 +14,17 @@ public abstract class K {
   public static final String DIFF = "diff";
   public static final String FINAL_CLUE = "final_clue";
   public static final String FREQ = "freq";
+  public static final String FREQ_TRIM = "freq_trim";
+  public static final String FREQUENCY = "frequency";
+  /**
+   * Limits the number of result per query
+   */
+  public static final int MAX_RESULT = 100;
+  public static final int MAX_SOLUTION_FINAL_CLUE = 15;
+  public static final String RAW_FREQ = "raw_freq";
   public static final String REV_SCORE = "reverse_score";
   public static final String ROOT = "root";
   public static final String WORD = "word";
-  
-  public static final int MAX_SOLUTION_FINAL_CLUE = 15;
   private K() {
   }
 

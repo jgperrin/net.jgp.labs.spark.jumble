@@ -62,7 +62,7 @@ public class JumbleSolverApp {
   public static void main(String[] args) {
     JumbleSolverApp app = new JumbleSolverApp();
     String[] games =
-        { "puzzle1", "puzzle2", "puzzle3", "puzzle4", "puzzle5" };
+        { "puzzle1"};//, "puzzle2", "puzzle3", "puzzle4", "puzzle5" };
     String game = null;
     try {
       for (int i = 0; i < games.length; i++) {
@@ -114,7 +114,7 @@ public class JumbleSolverApp {
             DataTypes.StringType,
             false),
         DataTypes.createStructField(
-            "frequency",
+            K.FREQUENCY,
             DataTypes.StringType,
             false) });
 
@@ -125,26 +125,26 @@ public class JumbleSolverApp {
         .load("data/freq_dict.json");
     // .load("data/freq_dict_puzzle6.json");
 
-    dictionaryDf = dictionaryDf.filter(col("frequency").isNotNull());
+    dictionaryDf = dictionaryDf.filter(col(K.FREQUENCY).isNotNull());
     dictionaryDf =
-        dictionaryDf.withColumn("freq_trim", trim(col("frequency")));
+        dictionaryDf.withColumn(K.FREQ_TRIM, trim(col(K.FREQUENCY)));
     dictionaryDf = dictionaryDf
         .withColumn(
-            "raw_freq",
-            split(col("freq_trim"), ",")
+            K.RAW_FREQ,
+            split(col(K.FREQ_TRIM), ",")
                 .getItem(0)
                 .cast(DataTypes.IntegerType))
-        .drop("frequency")
-        .drop("freq_trim");
+        .drop(K.FREQUENCY)
+        .drop(K.FREQ_TRIM);
 
     // If frequency is 0, it is actually very rare, so to ease sorting,
-    // let's assume it's more than the max, set to 9887.
+    // let's assume it's more than the max (set to 9887), so 10000.
     dictionaryDf = dictionaryDf
         .withColumn(
-            "freq",
-            when(col("raw_freq").equalTo(0), 10000)
-                .otherwise(col("raw_freq")))
-        .drop("raw_freq");
+            K.FREQ,
+            when(col(K.RAW_FREQ).equalTo(0), 10000)
+                .otherwise(col(K.RAW_FREQ)))
+        .drop(K.RAW_FREQ);
     dictionaryDf = dictionaryDf.cache();
     dictionaryDf.createOrReplaceTempView(K.ALL_WORDS);
   }
@@ -230,13 +230,13 @@ public class JumbleSolverApp {
             "Looking for all permutations of: {} #{}/{}.",
             root, ++rootIndex, roots.size());
         Dataset<Row> df0 =
-            buildPhase2Anagrams(root, charInWord, ph2WordCount);
+            buildPhase2Anagrams(root, charInWord, ph2WordCount, K.MAX_RESULT);
 
         // Combining all dataframes
         if (df == null) {
-          df = df0;
+          df = df0.cache();
         } else {
-          df = df.unionByName(df0);
+          df = df.unionByName(df0).cache();
         }
       }
       if (df == null) {
@@ -263,6 +263,9 @@ public class JumbleSolverApp {
       if (log.isTraceEnabled()) {
         puzzlePhase2Df.show();
       }
+    }
+    if (puzzlePhase2Df == null) {
+      throw new JumbleException("Could not initialize phase storage");
     }
     puzzlePhase2Df = puzzlePhase2Df
         .filter(col(K.DIFF + "_" + ph2WordCount).isNotNull())
@@ -340,8 +343,10 @@ public class JumbleSolverApp {
           .distinct()
           .orderBy(col(K.FREQ + "_" + i).asc()).collectAsList();
       long t1 = System.currentTimeMillis();
-      log.info("Word #{}: {}", i, SparkUtils.prettyPrintListRows(rows));
-      log.debug("Extraction took {} ms", (t1 - t0));
+      if (log.isInfoEnabled()) {
+        log.info("Word #{}: {}", i, SparkUtils.prettyPrintListRows(rows));
+        log.debug("Extraction took {} ms", (t1 - t0));
+      }
     }
 
   }
@@ -376,14 +381,14 @@ public class JumbleSolverApp {
   }
 
   private Dataset<Row> buildPhase2Anagrams(String word, int wordLength,
-      int wordIndex) {
+      int wordIndex, int maxResults) {
     String sql =
         "SELECT * FROM "
             + K.ALL_WORDS + " WHERE "
             + K.WORD + " IN ("
             + JumbleUtils.getSubPermutationsAsCommaSeparatedList(
                 word, wordLength)
-            + ") ORDER BY freq ASC";
+            + ") ORDER BY " + K.FREQ + " ASC LIMIT " + maxResults;
     return spark
         .sql(sql)
         .withColumn(K.ROOT + "_" + wordIndex, lit(word))
