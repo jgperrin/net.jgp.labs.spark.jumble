@@ -62,7 +62,7 @@ public class JumbleSolverApp {
   public static void main(String[] args) {
     JumbleSolverApp app = new JumbleSolverApp();
     String[] games =
-        { "puzzle1"};//, "puzzle2", "puzzle3", "puzzle4", "puzzle5" };
+        { "puzzle6"};//, "puzzle2", "puzzle3", "puzzle4", "puzzle5" };
     String game = null;
     try {
       for (int i = 0; i < games.length; i++) {

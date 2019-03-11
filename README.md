@@ -19,6 +19,8 @@ Please include the following in your repository:
 * Output from your code
 
 ## Results
+Results are in [RESULTS.md].
 
-### Puzzle 1
+## Status
+Status of the project is in [STATUS.md].
 
