@@ -17,7 +17,7 @@ public abstract class K {
    * Limits the number of results per query on anagrams, as those can become
    * really crazy. Queries are sorted by popularity anyway.
    */
-  public static final int MAX_RESULT = 50;
+  public static final int MAX_RESULT = 30;
 
   /**
    * Limits the number of solutions for the final clue.

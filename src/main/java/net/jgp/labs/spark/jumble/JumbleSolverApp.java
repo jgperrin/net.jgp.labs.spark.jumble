@@ -62,7 +62,7 @@ public class JumbleSolverApp {
   public static void main(String[] args) {
     JumbleSolverApp app = new JumbleSolverApp();
     String[] games =
-        { "puzzle1" };
+        { "puzzle5" };
     // Can also be an array to chain games, like:
     // { "puzzle1", "puzzle2", "puzzle3", "puzzle4", "puzzle5" };
     String game = null;
@@ -94,6 +94,8 @@ public class JumbleSolverApp {
     spark = SparkSession.builder()
         .appName("Jumble solver")
         .config("spark.driver.maxResultSize", "3g")
+        .config("spark.driver.memory", "3g")
+        .config("spark.executor.memory", "2g")
         .master("local[*]")
         .getOrCreate();
 

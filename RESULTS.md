@@ -3,10 +3,34 @@
 Timings in this file are not reflective of reality as many were run in parallel.
 
 ## Puzzle 1
+
+Using:
+*  `MAX_RESULT` set to 25.
+
+```
+2019-03-11 08:23:23.844 - INFO --- [           main] SolverApp.play(JumbleSolverApp.java:169): Now playing: Puzzle 1
+2019-03-11 08:23:25.601 - INFO --- [           main] SolverApp.play(JumbleSolverApp.java:207): Tentative solutions for phase 1:
+2019-03-11 08:23:33.188 - INFO --- [           main] pp.prettyPrint(JumbleSolverApp.java:351): Word #1: gland
+2019-03-11 08:23:34.258 - INFO --- [           main] pp.prettyPrint(JumbleSolverApp.java:351): Word #2: major, joram, jarmo
+2019-03-11 08:23:35.217 - INFO --- [           main] pp.prettyPrint(JumbleSolverApp.java:351): Word #3: becalm
+2019-03-11 08:23:36.221 - INFO --- [           main] pp.prettyPrint(JumbleSolverApp.java:351): Word #4: lawyer, warely, yawler
+2019-03-11 09:22:18.777 -ERROR --- [er-event-loop-4] Logging$class.logError(Logging.scala:70): Lost executor driver on localhost: Executor heartbeat timed out after 1204616 ms
+```
+
 Using:
 *  `MAX_RESULT` set to 50.
 
 ```
+2019-03-11 06:35:09.252 - INFO --- [           main] SolverApp.play(JumbleSolverApp.java:169): Now playing: Puzzle 1
+2019-03-11 06:35:10.663 - INFO --- [           main] SolverApp.play(JumbleSolverApp.java:207): Tentative solutions for phase 1:
+2019-03-11 06:35:17.203 - INFO --- [           main] pp.prettyPrint(JumbleSolverApp.java:351): Word #1: gland
+2019-03-11 06:35:18.826 - INFO --- [           main] pp.prettyPrint(JumbleSolverApp.java:351): Word #2: major, joram, jarmo
+2019-03-11 06:35:19.548 - INFO --- [           main] pp.prettyPrint(JumbleSolverApp.java:351): Word #3: becalm
+2019-03-11 06:35:20.595 - INFO --- [           main] pp.prettyPrint(JumbleSolverApp.java:351): Word #4: lawyer, warely, yawler
+2019-03-11 07:49:10.609 -ERROR --- [ver-heartbeater] Logging$class.logError(Logging.scala:91): Uncaught exception in thread driver-heartbeater
+java.lang.OutOfMemoryError: GC overhead limit exceeded
+2019-03-11 07:49:10.613 -ERROR --- [r for task 2596] Logging$class.logError(Logging.scala:91): Exception in task 3.0 in stage 319.0 (TID 2596)
+java.lang.OutOfMemoryError: GC overhead limit exceeded
 ```
 
 
@@ -80,6 +104,18 @@ Using:
 *  `MAX_RESULT` set to 50.
 
 ```
+2019-03-11 05:59:51.075 - INFO --- [           main] SolverApp.play(JumbleSolverApp.java:167): Now playing: Puzzle 5
+2019-03-11 05:59:52.771 - INFO --- [           main] SolverApp.play(JumbleSolverApp.java:205): Tentative solutions for phase 1:
+2019-03-11 05:59:59.130 - INFO --- [           main] pp.prettyPrint(JumbleSolverApp.java:349): Word #1: trying, trigyn, tyring
+2019-03-11 06:00:00.410 - INFO --- [           main] pp.prettyPrint(JumbleSolverApp.java:349): Word #2: divert
+2019-03-11 06:00:01.397 - INFO --- [           main] pp.prettyPrint(JumbleSolverApp.java:349): Word #3: seaman
+2019-03-11 06:00:02.397 - INFO --- [           main] pp.prettyPrint(JumbleSolverApp.java:349): Word #4: deceit
+2019-03-11 06:00:03.295 - INFO --- [           main] pp.prettyPrint(JumbleSolverApp.java:349): Word #5: shadow
+2019-03-11 06:00:04.217 - INFO --- [           main] pp.prettyPrint(JumbleSolverApp.java:349): Word #6: kechel, heckle
+Exception in thread "main" java.lang.OutOfMemoryError: GC overhead limit exceeded
+	at scala.collection.immutable.HashSet$HashTrieSet.updated0(HashSet.scala:552)
+	at scala.collection.immutable.HashSet$HashTrieSet.updated0(HashSet.scala:543)
+	at scala.collection.immutable.HashSet$HashTrieSet.updated0(HashSet.scala:543)
 ```
 
 ## Puzzle 6
