@@ -75,7 +75,16 @@ Using:
 *  `MAX_RESULT` set to 50.
 
 ```
+2019-03-11 08:51:45.775 - INFO --- [           main] SolverApp.play(JumbleSolverApp.java:169): Now playing: Puzzle 5
+2019-03-11 08:51:47.028 - INFO --- [           main] SolverApp.play(JumbleSolverApp.java:207): Tentative solutions for phase 1:
+2019-03-11 08:51:54.182 - INFO --- [           main] pp.prettyPrint(JumbleSolverApp.java:351): Word #1: trying, trigyn, tyring
+2019-03-11 08:51:55.631 - INFO --- [           main] pp.prettyPrint(JumbleSolverApp.java:351): Word #2: divert
+2019-03-11 08:51:56.769 - INFO --- [           main] pp.prettyPrint(JumbleSolverApp.java:351): Word #3: seaman
+2019-03-11 08:51:57.718 - INFO --- [           main] pp.prettyPrint(JumbleSolverApp.java:351): Word #4: deceit
+2019-03-11 08:51:58.596 - INFO --- [           main] pp.prettyPrint(JumbleSolverApp.java:351): Word #5: shadow
+2019-03-11 08:51:59.429 - INFO --- [           main] pp.prettyPrint(JumbleSolverApp.java:351): Word #6: kechel, heckle
 ```
+Never terminated phase 2 successfully.
 
 ## Puzzle 4
 Using:
