@@ -7,6 +7,7 @@
 
 ## What does not work/work as well as it could
  * Phase 2 is very slow.
+ * I did not manage to run phase 2 on every puzzle, too much resources, too slow... (see enhancements below).
  * Phase 3 is suppose to reconcile the best final result against the choice of words for phase 1. It does not work the way I want for now.
 
 ## Running the app
