@@ -5,7 +5,8 @@
 * Single words are displayed in order of popularity to solve the challenge. I have tested against two new online puzzles. They are added to the repository as `puzzle6` and `puzzle7`.
 * A puzzle is defined as a YAML file that is parsed at the beginning.
 
-## What does not work
+## What does not work/work as well as it could
+ * Phase 2 is very slow.
  * Phase 3 is suppose to reconcile the best final result against the choice of words for phase 1. It does not work the way I want for now.
 
 ## Running the app

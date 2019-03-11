@@ -8,5 +8,5 @@ words:
  - word: SEHEYC
    charToReport: [ 2, 6 ]
  - word: ARACEM
-   charToReport: [ 1, 5, 6 ]
+   charToReport: [ 2, 5, 6 ]
 finalClue: [ 3, 4, 3 ]

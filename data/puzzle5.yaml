@@ -1,12 +1,16 @@
-title: "Puzzle 4"
+title: "Puzzle 5"
 date: 2015-03-23
 words:
- - word: KNIDY
-   charToReport: [ 1, 2 ]
- - word: LEGIA
-   charToReport: [ 1, 3 ]
- - word: CRONEE
-   charToReport: [ 2, 4 ]
- - word: TUVEDO
+ - word: GYRINT
+   charToReport: [ 1, 2, 4 ]
+ - word: DRIVET
+   charToReport: [ 3, 6 ]
+ - word: SNAMEA
    charToReport: [ 1, 6 ]
-finalClue: [ 8 ]
+ - word: CEEDIT
+   charToReport: [ 2, 4, 6 ]
+ - word: SOWDAH
+   charToReport: [ 1, 4 ]
+ - word: ELCHEK
+   charToReport: [ 2, 6 ]
+finalClue: [ 6, 8 ]
