@@ -1,8 +1,8 @@
 package net.jgp.labs.spark.jumble;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertTrue;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -13,6 +13,11 @@ import org.slf4j.LoggerFactory;
 
 import net.jgp.labs.spark.jumble.utils.JumbleUtils;
 
+/**
+ * Very partial test cases.
+ * 
+ * @author jgp
+ */
 public class JumbleUtilsTest {
   private static Logger log =
       LoggerFactory.getLogger(JumbleUtilsTest.class);
